@@ -1,5 +1,10 @@
 Varad Deouskar - varad@wustl.edu
-Peter Rong - 
+Peter Rong - l.rong@wustl.edu
 
 Module Design
 
+Inside the single/lab.c file, we declared two global static unsigned long variables (log_sec, log_nsec). 
+We then used these two lines: 
+```module_param(log_sec, ulong, 0444)```
+```module_param(log_nsec, ulong, 0444)```
+To define the two ulong module parameters.
