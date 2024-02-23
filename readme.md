@@ -17,10 +17,10 @@ Inside the exit function, we called "hrtimer_cancel(&my_hrtimer);" to cancel the
 
 Part of the system log: 
 ```
-Feb 23 15:53:13 peterrpi kernel: [102015.718385] Hey there again
-Feb 23 15:53:13 peterrpi kernel: [102015.818385] Hey there again
-Feb 23 15:53:13 peterrpi kernel: [102015.918387] Hey there again
-Feb 23 15:53:13 peterrpi kernel: [102016.018389] Hey there again
+Feb 23 15:53:13 peterrpi kernel: [102015.718385] Logging
+Feb 23 15:53:13 peterrpi kernel: [102015.818385] Logging
+Feb 23 15:53:13 peterrpi kernel: [102015.918387] Logging
+Feb 23 15:53:13 peterrpi kernel: [102016.018389] Logging
 ```
 As we can see, there's log of thread waking up approximately every 0.1 seconds, which is really close to what we expect it to perform. (off by at most 0.0001 escond)
 
@@ -44,6 +44,89 @@ Feb 23 16:33:48 peterrpi kernel: [  154.807146] Iteration 8571: Thread Woken Up,
 Feb 23 16:33:48 peterrpi kernel: [  154.808146] Iteration 8572: Thread Woken Up, Voluntary CS: 8572, Involuntary CS: 4
 ```
 
-1) The time interval varies a bit more for using 1 millisecond than using 1 second as parameter.
+1) The time interval varies approximately up to 0.001 seconds using 1 second intervals, and the time intervals varies approximately up to 0.000001 seconds using 1 millisecond intervals. Proportionately, the one with 1 second intervals varies more drastically. 
 2) TODO
 
+# Multi-threading Design and Evaluation
+
+The set up is similar to that of a single thread monitor, except that inside ```timer_callback``` and ```ModuleInit``` function we wake up/call all four threads
+
+1 second interval:
+```
+Feb 23 17:30:20 peterrpi kernel: [ 3546.910838]  CPU - 0
+Feb 23 17:30:20 peterrpi kernel: [ 3546.910847] Iteration 90: Thread Woken Up, Voluntary CS: 23, Involuntary CS: 0
+Feb 23 17:30:20 peterrpi kernel: [ 3546.910847]  CPU - 1
+Feb 23 17:30:20 peterrpi kernel: [ 3546.910856] Iteration 91: Thread Woken Up, Voluntary CS: 23, Involuntary CS: 0
+Feb 23 17:30:20 peterrpi kernel: [ 3546.910856]  CPU - 3
+Feb 23 17:30:21 peterrpi kernel: [ 3546.910869] Iteration 92: Thread Woken Up, Voluntary CS: 23, Involuntary CS: 0
+Feb 23 17:30:21 peterrpi kernel: [ 3546.910869]  CPU - 2
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910787] Hey there again
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910851] Iteration 93: Thread Woken Up, Voluntary CS: 24, Involuntary CS: 0
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910851]  CPU - 3
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910860] Iteration 94: Thread Woken Up, Voluntary CS: 24, Involuntary CS: 0
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910860]  CPU - 1
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910869] Iteration 95: Thread Woken Up, Voluntary CS: 24, Involuntary CS: 0
+Feb 23 17:30:21 peterrpi kernel: [ 3547.910869]  CPU - 0
+```
+
+100 ms interval: 
+```
+Feb 23 17:38:16 peterrpi kernel: [ 4022.825856]  CPU - 1
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925794] Logging
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925841] Iteration 195: Thread Woken Up, Voluntary CS: 50, Involuntary CS: 0
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925841]  CPU - 2
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925847] Iteration 196: Thread Woken Up, Voluntary CS: 50, Involuntary CS: 6
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925847]  CPU - 3
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925854] Iteration 197: Thread Woken Up, Voluntary CS: 50, Involuntary CS: 0
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925854]  CPU - 0
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925860] Iteration 198: Thread Woken Up, Voluntary CS: 50, Involuntary CS: 0
+Feb 23 17:38:16 peterrpi kernel: [ 4022.925860]  CPU - 1
+Feb 23 17:38:16 peterrpi kernel: [ 4023.025847] Iteration 199: Thread Woken Up, Voluntary CS: 51, Involuntary CS: 0
+Feb 23 17:38:16 peterrpi kernel: [ 4023.025847]  CPU - 2
+Feb 23 17:38:16 peterrpi kernel: [ 4023.025855] Iteration 199: Thread Woken Up, Voluntary CS: 51, Involuntary CS: 6
+Feb 23 17:38:16 peterrpi kernel: [ 4023.025855]  CPU - 3
+Feb 23 17:38:16 peterrpi kernel: [ 4023.025862] Iteration 200: Thread Woken Up, Voluntary CS: 51, Involuntary CS: 0
+Feb 23 17:38:16 peterrpi kernel: [ 4023.025862]  CPU - 0
+```
+
+10 ms interval:
+```
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108206]  CPU - 0
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108211] Iteration 1488: Thread Woken Up, Voluntary CS: 387, Involuntary CS: 0
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108211]  CPU - 3
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108217] Iteration 1489: Thread Woken Up, Voluntary CS: 387, Involuntary CS: 2
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108217]  CPU - 1
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108222] Iteration 1490: Thread Woken Up, Voluntary CS: 387, Involuntary CS: 17
+Feb 23 17:39:47 peterrpi kernel: [ 4114.108222]  CPU - 2
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118162] Logging
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118194] Iteration 1491: Thread Woken Up, Voluntary CS: 388, Involuntary CS: 0
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118194]  CPU - 0
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118199] Iteration 1492: Thread Woken Up, Voluntary CS: 388, Involuntary CS: 17
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118199]  CPU - 2
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118205] Iteration 1493: Thread Woken Up, Voluntary CS: 388, Involuntary CS: 2
+Feb 23 17:39:47 peterrpi kernel: [ 4114.118205]  CPU - 1
+```
+
+1 ms interval:
+```
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040498]  CPU - 0
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040499] Iteration 23141: Thread Woken Up, Voluntary CS: 5968, Involuntary CS: 34
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040499]  CPU - 2
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040501] Iteration 23142: Thread Woken Up, Voluntary CS: 5952, Involuntary CS: 44
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040501]  CPU - 3
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040504] Iteration 23143: Thread Woken Up, Voluntary CS: 5950, Involuntary CS: 0
+Feb 23 17:41:00 peterrpi kernel: [ 4187.040504]  CPU - 1
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041465] Logging
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041481] Iteration 23144: Thread Woken Up, Voluntary CS: 5951, Involuntary CS: 0
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041481]  CPU - 1
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041483] Iteration 23145: Thread Woken Up, Voluntary CS: 5969, Involuntary CS: 34
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041483]  CPU - 2
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041486] Iteration 23146: Thread Woken Up, Voluntary CS: 5953, Involuntary CS: 44
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041486]  CPU - 3
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041488] Iteration 23147: Thread Woken Up, Voluntary CS: 5956, Involuntary CS: 0
+Feb 23 17:41:00 peterrpi kernel: [ 4187.041488]  CPU - 0
+```
+
+1) The difference in the actual timestamp is more close to the actual intended interval in the multithread case than the single thread case.
+2) 
+3) 
