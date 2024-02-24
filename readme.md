@@ -130,3 +130,10 @@ Feb 23 17:41:00 peterrpi kernel: [ 4187.041488]  CPU - 0
 1) The difference in the actual timestamp is more close to the actual intended interval in the multithread case than the single thread case.
 2) 
 3) 
+
+
+# System Performance
+
+total_exec min: 0.000015 max: 0.000019 mean: 0.000017
+jitter min: 0.000001 max: 0.000002 mean: 0.0000017
+single_thread_statistics min: 0.000014 max: 0.000018 mean: 0.0000165 
